@@ -670,20 +670,44 @@ function addAudioStructured(obj) {
     addCdsObject(obj, container);
 }
 
+function fillObjectData(o){
+   const location = o.location, description = o.title;
+   if (location.startsWith("/media/cortos")){
+      var splitted = description.split(" - "),
+         year = splitted[0] + '-01-01', author = splitted[1], title = splitted[2];
+      print ('short: ' + year + ' : ' + author + ' : ' + title);
+      o.title = title;
+      o.meta[M_TITLE] = title;
+      o.meta[M_ALBUM] = '';
+      o.meta[M_ARTIST] = author;
+      o.meta[M_DATE] = year;
+      o.meta[M_UPNP_DATE] = year;
+      o.meta[M_LONGDESCRIPTION] = description;
+   } else if (location.startsWith('/media/series')) {
+      location = location.replace('/media/series/', '');
+      print("--> " + location);
+      var parts = location.split("/"), season = "1", fileName, folderName,
+         folderName = parts[0], fileName = parts[parts.length - 1],
+	 fileSplit = fileName.split(" - "), title = fileSplit.slice(2, fileSplit.length).join(' - '),
+         folderSplit = folderName.split(' - '), year = folderSplit[0], author = folderSplit[1],
+         season = fileSplit[1].substring(0, 3) , episode = fileSplit[1].substring(4, 6);
+      print ('serie: ' + year + ' : ' + author + ' : ' + title);
+
+      title = title.substring(0, title.lastIndexOf('.'));
+      o.title = fileSplit[1] + ' - ' + title;
+      o.meta[M_TITLE] = title;
+      o.meta[M_ALBUM] = folderSplit.slice(2, folderSplit.length).join(' - ');
+      o.meta[M_ARTIST] = author;
+      o.meta[M_DATE] = year;
+      o.meta[M_UPNP_DATE] = year;
+      o.meta[M_LONGDESCRIPTION] = description;
+   }
+}
+
 // doc-add-video-begin
 function addVideo(obj) {
     print(">> addVideo");
-
-    const titleOriginal = obj.title, splitted = titleOriginal.split(" - "), year = splitted[0] + '-01-01',
-		author = splitted[1], title = splitted[2];
-    print (year + ' : ' + author + ' : ' + title);
-    obj.title = title;
-    obj.meta[M_TITLE] = title;
-    obj.meta[M_ALBUM] = title;
-    obj.meta[M_ARTIST] = author;
-    obj.meta[M_DATE] = year;
-    obj.meta[M_UPNP_DATE] = year;
-    obj.meta[M_LONGDESCRIPTION] = titleOriginal;
+    fillObjectData(obj);
     // - - -
     const dir = getRootPath(object_script_path, obj.location);
     const chain = {
@@ -693,15 +717,13 @@ function addVideo(obj) {
         allYears: { title: 'Year', objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER },
         allDates: { title: 'Date', objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER },
 
-        year: { title: year, objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER },
+        year: { title: 'Unbekannt', objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER },
         month: { title: 'Unbekannt', objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER, meta: {}, res: obj.res, aux: obj.aux, refID: obj.id },
-        date: { title: year, objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER, meta: {}, res: obj.res, aux: obj.aux, refID: obj.id }
+        date: { title: 'Unbekannt', objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER, meta: {}, res: obj.res, aux: obj.aux, refID: obj.id }
     };
     var container = addContainerTree([chain.video, chain.allVideo]);
     addCdsObject(obj, container);
 
-    chain.date.title = year;
-    chain.year.title = year;
     addCdsObject(obj, addContainerTree([chain.video, chain.allDates, chain.date]));
     if (dir.length > 0) {
         var tree = [chain.video, chain.allDirectories];
