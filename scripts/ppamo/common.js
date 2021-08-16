@@ -671,10 +671,10 @@ function addAudioStructured(obj) {
 }
 
 function fillObjectData(o){
-   const location = o.location, description = o.title;
-   if (location.startsWith("/media/cortos")){
+   var location = o.location, description = o.title;
+   if (location.startsWith("/media/shorts")){
       var splitted = description.split(" - "),
-         year = splitted[0] + '-01-01', author = splitted[1], title = splitted[2];
+         year = splitted[0], author = splitted[1], title = splitted[2];
       print ('short: ' + year + ' : ' + author + ' : ' + title);
       o.title = title;
       o.meta[M_TITLE] = title;
@@ -684,11 +684,10 @@ function fillObjectData(o){
       o.meta[M_UPNP_DATE] = year;
       o.meta[M_LONGDESCRIPTION] = description;
    } else if (location.startsWith('/media/series')) {
-      location = location.replace('/media/series/', '');
-      print("--> " + location);
-      var parts = location.split("/"), season = "1", fileName, folderName,
-         folderName = parts[0], fileName = parts[parts.length - 1],
-	 fileSplit = fileName.split(" - "), title = fileSplit.slice(2, fileSplit.length).join(' - '),
+      var location = location.replace('/media/series/', ''),
+         parts = location.split("/"), season = "1", folderName = parts[0],
+         fileName = parts[parts.length - 1], fileSplit = fileName.split(" - "),
+         title = fileSplit.slice(2, fileSplit.length).join(' - '),
          folderSplit = folderName.split(' - '), year = folderSplit[0], author = folderSplit[1],
          season = fileSplit[1].substring(0, 3) , episode = fileSplit[1].substring(4, 6);
       print ('serie: ' + year + ' : ' + author + ' : ' + title);
@@ -701,6 +700,19 @@ function fillObjectData(o){
       o.meta[M_DATE] = year;
       o.meta[M_UPNP_DATE] = year;
       o.meta[M_LONGDESCRIPTION] = description;
+   } else if (location.startsWith('/media/movies')) {
+      var location = location.replace('/media/movies/', ''), parts = location.split("/"),
+         folderName = parts[0], fileName = parts[parts.length - 1], fileSplit = fileName.split(" - "),
+         folderSplit = folderName.split(' - '), year = folderSplit[0], author = folderSplit[1],
+         title = folderSplit.slice(2, folderSplit.length).join(' - ');
+
+      print ('movie: ' + year + ' : ' + author + ' : ' + title);
+      o.title = title;
+      o.meta[M_TITLE] = title;
+      o.meta[M_ARTIST] = author;
+      o.meta[M_DATE] = year;
+      o.meta[M_UPNP_DATE] = year;
+      o.meta[M_LONGDESCRIPTION] = title;
    }
 }
 
@@ -719,7 +731,7 @@ function addVideo(obj) {
 
         year: { title: 'Unbekannt', objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER },
         month: { title: 'Unbekannt', objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER, meta: {}, res: obj.res, aux: obj.aux, refID: obj.id },
-        date: { title: 'Unbekannt', objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER, meta: {}, res: obj.res, aux: obj.aux, refID: obj.id }
+        date: { title: obj.meta[M_DATE], objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER, meta: {}, res: obj.res, aux: obj.aux, refID: obj.id }
     };
     var container = addContainerTree([chain.video, chain.allVideo]);
     addCdsObject(obj, container);
