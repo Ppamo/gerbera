@@ -1,0 +1,23 @@
+FROM alpine:3.13
+RUN apk add --no-cache tini util-linux sqlite mariadb-connector-c zlib fmt \
+	file libexif curl ffmpeg-libs ffmpegthumbnailer libmatroska libebml taglib \
+	pugixml spdlog sqlite-libs libupnp duktape su-exec
+
+# Gerbera itself
+COPY --from=gerbera_builder /gerbera_build/build/gerbera /bin/gerbera
+COPY --from=gerbera_builder /gerbera_build/scripts/js /usr/local/share/gerbera/js
+COPY --from=gerbera_builder /gerbera_build/web /usr/local/share/gerbera/web
+COPY --from=gerbera_builder /gerbera_build/src/database/*/*.sql /usr/local/share/gerbera/
+
+COPY scripts/docker/docker-entrypoint.sh /usr/local/bin
+
+RUN addgroup -S gerbera 2>/dev/null && \
+    adduser -S -D -H -h /var/run/gerbera -s /sbin/nologin -G gerbera -g gerbera gerbera 2>/dev/null && \
+    mkdir /var/run/gerbera/ && chmod 2775 /var/run/gerbera/ && \
+    mkdir /content && chmod 777 /content
+
+EXPOSE 49494
+EXPOSE 1900/udp
+
+ENTRYPOINT ["/sbin/tini", "--", "docker-entrypoint.sh"]
+CMD ["gerbera","--port", "49494", "--config", "/var/run/gerbera/config.xml"]
