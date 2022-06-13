@@ -719,6 +719,7 @@ function fillObjectData(o){
 // doc-add-video-begin
 function addVideo(obj) {
     print(">> addVideo");
+    print("--> " + obj.location);
     fillObjectData(obj);
     // - - -
     const dir = getRootPath(object_script_path, obj.location);
