@@ -249,58 +249,24 @@ function mapGenre(genre) {
 
 // doc-add-audio-begin
 function addAudio(obj) {
-    print(">> addAudio");
-    var desc = '';
-    var artist_full;
-    var album_full;
+    print('>> addAudio');
+    print("-- " + obj.location);
+    var parts = obj.location.split('/'), fileName = parts[parts.length - 1],
+		folderName = parts[parts.length - 2],
+		trackNumber = fileName.substring(0, fileName.indexOf(' ')),
+		title = fileName.substring(fileName.indexOf(' - ') + 3, fileName.lastIndexOf('.')),
+		year = folderName.substring(0, folderName.indexOf(' ')),
+		artist = folderName.substring(folderName.indexOf(' - ') + 3, 
+			folderName.indexOf(' - ', folderName.indexOf(' - ') + 3)),
+		album = folderName.substring(folderName.indexOf(' - ', folderName.indexOf(' - ') + 3) + 3);
 
-    // First we will gather all the metadata that is provided by our
-    // object, of course it is possible that some fields are empty -
-    // we will have to check that to make sure that we handle this
-    // case correctly.
-    var title = obj.meta[M_TITLE];
+    var genre = obj.meta[M_GENRE], desc = '';
+    obj.meta[M_TITLE] = title;
+    obj.meta[M_ALBUM] = album;
+    obj.meta[M_ARTIST] = artist;
+    obj.meta[M_TRACKNUMBER] = trackNumber;
+    obj.meta[M_DATE] = year;
 
-    // Note the difference between obj.title and obj.meta[M_TITLE] -
-    // while object.title will originally be set to the file name,
-    // obj.meta[M_TITLE] will contain the parsed title - in this
-    // particular example the ID3 title of an MP3.
-    if (!title) {
-        title = obj.title;
-    }
-
-    var artist = obj.meta[M_ARTIST];
-    if (!artist) {
-        artist = 'Unknown';
-        artist_full = null;
-    } else {
-        artist_full = artist;
-        desc = artist;
-    }
-
-    var album = obj.meta[M_ALBUM];
-    if (!album) {
-        album = 'Unknown';
-        album_full = null;
-    } else {
-        desc = desc + ', ' + album;
-        album_full = album;
-    }
-
-    if (desc) {
-        desc = desc + ', ';
-    }
-    desc = desc + title;
-
-    var date = obj.meta[M_DATE];
-    if (!date) {
-        date = 'Unknown';
-    } else {
-        date = getYear(date);
-        obj.meta[M_UPNP_DATE] = date;
-        desc = desc + ', ' + date;
-    }
-
-    var genre = obj.meta[M_GENRE];
     if (!genre) {
         genre = 'Unknown';
     } else {
@@ -317,47 +283,6 @@ function addAudio(obj) {
     if (!composer) {
         composer = 'None';
     }
-
-/*
-    var conductor = obj.meta[M_CONDUCTOR];
-    if (!conductor) {
-        conductor = 'None';
-    }
-
-    var orchestra = obj.meta[M_ORCHESTRA];
-    if (!orchestra) {
-        orchestra = 'None';
-    }
-*/
-    // uncomment this if you want to have track numbers in front of the title
-    // in album view
-/*
-    var track = obj.meta[M_TRACKNUMBER];
-    if (!track) {
-        track = '';
-    } else {
-        if (track.length == 1) {
-            track = '0' + track;
-        }
-        track = track + ' ';
-    }
-*/
-    // comment the following line out if you uncomment the stuff above  :)
-    var track = '';
-
-// uncomment this if you want to have channel numbers in front of the title
-/*
-    var channels = obj.res[R_NRAUDIOCHANNELS];
-    if (channels) {
-        if (channels === "1") {
-            track = track + '[MONO]';
-        } else if (channels === "2") {
-            track = track + '[STEREO]';
-        } else {
-            track = track + '[MULTI]';
-        }
-    }
-*/
 
     // We finally gathered all data that we need, so let's create a
     // nice layout for our audio files.
@@ -387,19 +312,21 @@ function addAudio(obj) {
         artist: { title: artist, objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER_MUSIC_ARTIST, meta: {}, res: obj.res, aux: obj.aux, refID: obj.id },
         album: { title: album, objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER_MUSIC_ALBUM, meta: {}, res: obj.res, aux: obj.aux, refID: obj.id },
         genre: { title: genre, objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER_MUSIC_GENRE, meta: {}, res: obj.res, aux: obj.aux, refID: obj.id },
-        year: { title: date, objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER, meta: {}, res: obj.res, aux: obj.aux, refID: obj.id },
+        year: { title: year, objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER, meta: {}, res: obj.res, aux: obj.aux, refID: obj.id },
         composer: { title: composer, objectType: OBJECT_TYPE_CONTAINER, upnpclass: UPNP_CLASS_CONTAINER_MUSIC_COMPOSER, meta: {}, res: obj.res, aux: obj.aux, refID: obj.id },
     };
 
     chain.album.meta[M_ARTIST] = artist;
     chain.album.meta[M_ALBUMARTIST] = artist;
     chain.album.meta[M_GENRE] = genre;
-    chain.album.meta[M_DATE] = obj.meta[M_DATE];
+//  chain.album.meta[M_DATE] = obj.meta[M_DATE];
+    chain.album.meta[M_DATE] = year;
     chain.album.meta[M_ALBUM] = album;
     chain.artist.meta[M_ARTIST] = artist;
     chain.artist.meta[M_ALBUMARTIST] = artist;
     chain.genre.meta[M_GENRE] = genre;
-    chain.year.meta[M_DATE] = date;
+//    chain.year.meta[M_DATE] = date;
+    chain.year.meta[M_DATE] = year;
     chain.composer.meta[M_COMPOSER] = composer;
 
     var container = addContainerTree([chain.audio, chain.allAudio]);
@@ -408,30 +335,20 @@ function addAudio(obj) {
     container = addContainerTree([chain.audio, chain.allArtists, chain.artist, chain.allSongs]);
     addCdsObject(obj, container);
 
-    var temp = '';
-    if (artist_full) {
-        temp = artist_full;
-    }
-
-    if (album_full) {
-        temp = temp + ' - ' + album_full + ' - ';
-    } else {
-        temp = temp + ' - ';
-    }
-
-    obj.title = temp + title;
+//  obj.title = temp + title;
+    obj.title = year + ' - ' + title;
     container = addContainerTree([chain.audio, chain.allFull]);
     addCdsObject(obj, container);
 
     container = addContainerTree([chain.audio, chain.allArtists, chain.artist, chain.allFull]);
     addCdsObject(obj, container);
 
-    obj.title = track + title;
+    obj.title = trackNumber + ' - ' + title;
     container = addContainerTree([chain.audio, chain.allArtists, chain.artist, chain.album]);
     addCdsObject(obj, container);
 
     container = addContainerTree([chain.audio, chain.allAlbums, chain.album]);
-    obj.title = track + title;
+    obj.title = trackNumber + ' - ' + title;
     addCdsObject(obj, container);
 
     container = addContainerTree([chain.audio, chain.allGenres, chain.genre]);
@@ -719,7 +636,7 @@ function fillObjectData(o){
 // doc-add-video-begin
 function addVideo(obj) {
     print(">> addVideo");
-    print("--> " + obj.location);
+    print("-- " + obj.location);
     fillObjectData(obj);
     // - - -
     const dir = getRootPath(object_script_path, obj.location);
@@ -863,7 +780,8 @@ function addTrailer(obj) {
 
 // doc-add-playlist-item-begin
 function addPlaylistItem(playlist_title, location, title, playlistChain, order, playlistOrder) {
-    print(">> addPlayListItem");
+print(">> addPlayListItem");
+print(location);
     // Determine if the item that we got is an URL or a local file.
 
     if (location.match(/^.*:\/\//)) {
