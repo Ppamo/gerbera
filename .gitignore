@@ -30,3 +30,5 @@ doc/_build
 build
 
 gerbera.service
+run/config.xml
+run/gerbera.db

@@ -67,6 +67,7 @@ RUN apk add --no-cache \
     curl \
     duktape \
     ffmpeg4 \
+    ffmpeg4-dev \
     file \
     fmt \
     libebml \
@@ -107,7 +108,7 @@ EXPOSE 49494
 EXPOSE 1900/udp
 
 ENTRYPOINT ["/sbin/tini", "--", "docker-entrypoint.sh"]
-CMD ["gerbera","--port", "49494", "--config", "/var/run/gerbera/config.xml"]
+CMD ["gerbera","--port", "49494", "--config", "/run/gerbera/config.xml"]
 
 FROM gerbera AS with_transcoding
 RUN apk add --no-cache \
